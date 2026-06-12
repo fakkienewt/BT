@@ -1,0 +1,75 @@
+<div class="catalog-wrapper">
+    <div class="catalog-header">
+        <h2 class="catalog-title">Каталог товаров</h2>
+    </div>
+
+    <div class="catalog-section">
+        <div class="categories-grid">
+            <div class="category-item" *ngFor="let cat of mainCategories" [class.active]="activeCategory === cat.id"
+                (click)="selectCategory(cat.id)">
+                {{ cat.name }}
+            </div>
+        </div>
+    </div>
+
+    <div class="subcategories-wrapper" *ngIf="activeCategory && getSubcategories().length > 0">
+        <div class="subcategories-label">Категории</div>
+        <div class="subcategories-scroll">
+            <div class="subcategory-chip" *ngFor="let sub of getSubcategories()"
+                [class.active]="activeSubcategory === sub.id" (click)="selectSubcategory(sub.id)">
+                {{ sub.name }}
+            </div>
+        </div>
+    </div>
+
+    <div class="catalog-products-section" *ngIf="activeCategory">
+        <div class="products-container">
+            <div class="section-bar">ТОВАРЫ</div>
+
+            <div class="products-card">
+                <div class="products-grid" *ngIf="loading">
+                    <div class="product-skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]">
+                        <div class="skeleton-poster">
+                            <div class="skeleton-shimmer"></div>
+                        </div>
+                        <div class="skeleton-brand"></div>
+                        <div class="skeleton-title"></div>
+                        <div class="skeleton-price"></div>
+                    </div>
+                </div>
+
+                <div class="products-grid" *ngIf="!loading && products.length > 0">
+                    <div class="product-card" *ngFor="let product of products">
+                        <div class="product-image">
+                            <img [src]="product.imageUrl[0] || 'https://via.placeholder.com/200'" [alt]="product.title"
+                                loading="lazy">
+                        </div>
+                        <div class="product-info">
+                            <div class="product-brand" *ngIf="product.brand">{{ product.brand }}</div>
+                            <div class="product-title">{{ product.title | slice:0:35 }}{{ product.title.length > 35 ?
+                                '...' : '' }}</div>
+                            <div class="product-price">{{ product.price | number:'1.2-2' }} BYN</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="no-data" *ngIf="!loading && products.length === 0">
+                    <div class="no-data-icon">📦</div>
+                    <p>Товары не найдены</p>
+                    <p class="no-data-hint">Попробуйте выбрать другую категорию</p>
+                </div>
+            </div>
+
+            <div class="pagination" *ngIf="!loading && allProducts.length > 0">
+                <button class="pagination-btn" [disabled]="service.currentPage === 1" (click)="prevPage()">
+                    ← Предыдущая
+                </button>
+                <span class="pagination-info">Страница {{ service.currentPage }} из {{ totalPages }}</span>
+                <button class="pagination-btn" [disabled]="service.currentPage * pageSize >= allProducts.length"
+                    (click)="nextPage()">
+                    Следующая →
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

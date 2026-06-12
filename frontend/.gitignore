@@ -1,0 +1,83 @@
+# ==========================================
+# ASP.NET Core Backend
+# ==========================================
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.nupkg
+*.csproj.user
+appsettings.Development.json
+*.dll
+*.pdb
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Bb]uild/
+*.log
+[Nn]u[Pp]kg/
+*.userprefs
+*.pidb
+*.booproj
+*.svx
+*.scc
+*.cscc
+*.scc
+[Tt]est[Rr]esult*/
+[Bb]uild[Rr]esult*/
+
+# ==========================================
+# Angular Frontend
+# ==========================================
+/dist
+/tmp
+/out-tsc
+/bazel-out
+/node_modules
+npm-debug.log
+yarn-error.log
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+
+# ==========================================
+# IDEs and editors
+# ==========================================
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+*.swp
+*.swo
+*~
+
+# ==========================================
+# System files
+# ==========================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# Miscellaneous
+# ==========================================
+*.log
+.env
+.env.local
+.env.*.local

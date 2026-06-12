@@ -1,0 +1,148 @@
+:host {
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+}
+
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: black;
+    width: 70%;
+    height: 80px;
+    border-radius: 20px;
+    padding: 0 30px;
+    border: 1px solid gray;
+}
+
+.header-container-logo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.header-text-logo-buy {
+    color: white;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.header-text-logo-tech {
+    color: #22c55e;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.header-container-input-search {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-input-search {
+    width: 400px;
+    border-radius: 20px;
+    outline: none;
+    padding: 8px 8px 8px 12px;
+    font-size: 14px;
+}
+
+.header-search-icon {
+    position: absolute;
+    right: 10px;
+    width: 23px;
+    height: 23px;
+    cursor: pointer;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 35px;
+}
+
+.header-container-profile {
+    display: flex;
+    justify-content: center;
+}
+
+.header-button-profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.header-button-profile img {
+    width: 25px;
+    height: 25px;
+}
+
+.header-button-profile:hover {
+    transform: scale(1.1);
+}
+
+.header-container-card {
+    display: flex;
+    justify-content: center;
+}
+
+.header-button-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.header-button-card img {
+    width: 23px;
+    height: 23px;
+    transform: translateY(-1px);
+}
+
+.header-button-card:hover {
+    transform: scale(1.1);
+}
+
+
+.header-container-favorite {
+    display: flex;
+    justify-content: center;
+}
+
+.header-button-favorite {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.header-button-favorite img {
+    width: 20px;
+    height: 20px;
+}
+
+.header-button-favorite:hover {
+    transform: scale(1.1);
+}

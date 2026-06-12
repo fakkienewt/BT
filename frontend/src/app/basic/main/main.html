@@ -1,0 +1,62 @@
+<app-new></app-new>
+
+<div class="container-bar">
+    <div class="tabs-left">
+        <div class="tab" [class.active]="currentCategory === 'phones' && !showCatalog"
+            (click)="changeCategory('phones')">Смартфоны</div>
+        <div class="tab" [class.active]="currentCategory === 'laptops' && !showCatalog"
+            (click)="changeCategory('laptops')">Ноутбуки</div>
+        <div class="tab" [class.active]="currentCategory === 'computers' && !showCatalog"
+            (click)="changeCategory('computers')">Компьютеры</div>
+        <div class="tab" [class.active]="currentCategory === 'tablets' && !showCatalog"
+            (click)="changeCategory('tablets')">Планшеты</div>
+    </div>
+    <div class="tab catalog-button" (click)="goToCatalog()" [class.active]="showCatalog">Каталог</div>
+</div>
+
+<app-catalog *ngIf="showCatalog"></app-catalog>
+
+<div class="main-products-section" *ngIf="!showCatalog">
+    <div class="section-bar">ТОВАРЫ</div>
+
+    <div class="products-card">
+        <div class="products-grid" *ngIf="loading">
+            <div *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]" class="product-skeleton">
+                <div class="skeleton-poster"></div>
+                <div class="skeleton-lines">
+                    <div class="line-up"></div>
+                    <div class="line-down"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="products-grid" *ngIf="!loading && products.length > 0">
+            <div class="product-card" *ngFor="let product of products">
+                <div class="product-image">
+                    <img [src]="product.imageUrl[0] || 'https://via.placeholder.com/200'" [alt]="product.title">
+                </div>
+                <div class="product-info">
+                    <div class="product-brand" *ngIf="product.brand">{{ product.brand }}</div>
+                    <div class="product-title">{{ product.title | slice:0:35 }}{{ product.title.length > 35 ? '...' : ''
+                        }}</div>
+                    <div class="product-price">{{ product.price | number:'1.2-2' }} BYN</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-data" *ngIf="!loading && products.length === 0">
+            <p>Товары не найдены</p>
+        </div>
+    </div>
+
+    <div class="pagination" *ngIf="!loading && allProducts.length > 0">
+        <button class="pagination-btn" [disabled]="service.currentPage === 1" (click)="prevPage()">
+            ← Предыдущая
+        </button>
+        <span class="pagination-info">Страница {{ service.currentPage }}</span>
+        <button class="pagination-btn" [disabled]="service.currentPage * pageSize >= allProducts.length"
+            (click)="nextPage()">
+            Следующая →
+        </button>
+    </div>
+</div>
