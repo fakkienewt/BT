@@ -1,17 +1,26 @@
 <app-header></app-header>
-<div class="product-detail-container" *ngIf="product">
-    <div class="breadcrumb">
-        <span class="breadcrumb-item">Главная</span>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-item">Каталог</span>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-item">{{ getCategoryName(product.category) }}</span>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-item">{{ product.brand }}</span>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-item active">{{ product.title | slice:0:40 }}</span>
-    </div>
 
+<div class="loading-container" *ngIf="loading">
+    <div class="skeleton-product">
+        <div class="skeleton-gallery"></div>
+        <div class="skeleton-info">
+            <div class="skeleton-line wide"></div>
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line price"></div>
+        </div>
+    </div>
+</div>
+
+<div class="error-container" *ngIf="!loading && error">
+    <div class="error-content">
+        <div class="error-icon">⚠</div>
+        <h3 class="error-title">ОШИБКА</h3>
+        <p class="error-message">{{ error }}</p>
+        <button class="error-btn" (click)="router.navigate(['/'])">НА ГЛАВНУЮ</button>
+    </div>
+</div>
+
+<div class="product-detail-container" *ngIf="!loading && !error && product">
     <div class="product-main">
         <div class="product-gallery">
             <div class="gallery-badge" *ngIf="product.price > 1000">ХИТ ПРОДАЖ</div>
@@ -20,7 +29,7 @@
             </div>
             <div class="gallery-thumbnails" *ngIf="product.imageUrl.length > 1">
                 <div *ngFor="let img of product.imageUrl; let i = index" class="thumbnail-item"
-                    [class.active]="selectedImageIndex === i">
+                    [class.active]="selectedImageIndex === i" (click)="selectedImageIndex = i">
                     <img [src]="img" [alt]="product.title + ' - ' + i">
                 </div>
             </div>
@@ -42,9 +51,15 @@
 
             <div class="product-actions">
                 <button class="btn-buy-oneclick">КУПИТЬ В 1 КЛИК</button>
-                <button class="btn-add-to-cart">В КОРЗИНУ</button>
-                <button class="btn-favorite">
-                    <img src="assets/favorite-icon.png" alt="favorite">
+                <button class="btn-add-to-cart" [class.in-cart]="isInCart" (click)="addToCart()">
+                    {{ isInCart ? 'В КОРЗИНЕ ✓' : 'В КОРЗИНУ' }}
+                </button>
+                <button class="btn-favorite" [class.in-favorite]="isInFavorite" (click)="toggleFavorite()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.54L12 21.35Z"
+                            [attr.fill]="isInFavorite ? '#22c55e' : 'none'" stroke="#e0e0e0" stroke-width="1.5" />
+                    </svg>
                 </button>
             </div>
 
@@ -93,24 +108,25 @@
             <span class="related-title">С этим товаром покупают</span>
         </div>
         <div class="related-grid">
-            <div class="related-card" *ngFor="let item of relatedProducts">
+            <div class="related-card" *ngFor="let item of relatedProducts" (click)="goToProduct(item.id)">
                 <div class="related-image">
                     <img [src]="item.imageUrl[0]" [alt]="item.title">
                 </div>
                 <div class="related-brand">{{ item.brand }}</div>
                 <div class="related-name">{{ item.title | slice:0:35 }}{{ item.title.length > 35 ? '...' : '' }}</div>
                 <div class="related-price">{{ item.price | number:'1.2-2' }} BYN</div>
-                <button class="related-cart">В корзину</button>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="skeleton-product" *ngIf="loading">
-        <div class="skeleton-gallery"></div>
-        <div class="skeleton-info">
-            <div class="skeleton-line wide"></div>
-            <div class="skeleton-line medium"></div>
-            <div class="skeleton-line price"></div>
-        </div>
+<div class="notification" [class.show]="notification.show" [class.success]="notification.type === 'success'"
+    [class.error]="notification.type === 'error'">
+    <div class="notification-content">
+        <span class="notification-icon">{{ notification.type === 'success' ? '✓' : '⚠' }}</span>
+        <span class="notification-message">{{ notification.message }}</span>
+        <button class="notification-close" (click)="closeNotification()">✕</button>
     </div>
 </div>
+
+<app-footer></app-footer>

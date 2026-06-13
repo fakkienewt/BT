@@ -8,5 +8,6 @@ namespace backend.Models
         public string Username { get; set; } = string.Empty; 
         public string? PhoneNumber { get; set; }
         public string? DeliveryAddress { get; set; }
+        public string? AvatarUrl { get; set; }  
     }
 }

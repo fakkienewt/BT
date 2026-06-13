@@ -19,7 +19,7 @@
             </div>
 
             <div class="section-grid" *ngIf="!loading && displayedProducts.length > 0">
-                <div class="product-card" *ngFor="let product of displayedProducts">
+                <div class="product-card" *ngFor="let product of displayedProducts" (click)="goToProduct(product.id)">
                     <div class="product-image">
                         <img [src]="product.imageUrl[0] || 'https://via.placeholder.com/200'" [alt]="product.title">
                     </div>

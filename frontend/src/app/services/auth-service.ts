@@ -38,6 +38,7 @@ export class AuthService {
             username: user.username,
             phoneNumber: user.phoneNumber,
             deliveryAddress: user.deliveryAddress,
+            avatarUrl: user.avatarUrl,
             password: ''
         };
 

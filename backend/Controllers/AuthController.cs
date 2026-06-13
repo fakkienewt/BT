@@ -109,7 +109,7 @@ public class AuthController : ControllerBase
         using var connection = _dbHelper.GetConnection();
         await connection.OpenAsync();
 
-        string sql = "SELECT Id, Email, Username, PhoneNumber, DeliveryAddress FROM Users WHERE Id = @id";
+        string sql = "SELECT Id, Email, Username, PhoneNumber, DeliveryAddress, AvatarUrl FROM Users WHERE Id = @id";
         using var cmd = new MySqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@id", id);
 
@@ -123,7 +123,8 @@ public class AuthController : ControllerBase
             Email = reader["Email"].ToString(),
             Username = reader["Username"].ToString(),
             PhoneNumber = reader["PhoneNumber"] == DBNull.Value ? null : reader["PhoneNumber"].ToString(),
-            DeliveryAddress = reader["DeliveryAddress"] == DBNull.Value ? null : reader["DeliveryAddress"].ToString()
+            DeliveryAddress = reader["DeliveryAddress"] == DBNull.Value ? null : reader["DeliveryAddress"].ToString(),
+            AvatarUrl = reader["AvatarUrl"] == DBNull.Value ? null : reader["AvatarUrl"].ToString()
         };
 
         return Ok(user);
@@ -179,5 +180,57 @@ public class AuthController : ControllerBase
         await deleteCmd.ExecuteNonQueryAsync();
 
         return Ok(new { message = "User deleted successfully" });
+    }
+
+    [HttpPost("{userId}/avatar")]
+    public async Task<IActionResult> UploadAvatar(int userId, IFormFile avatar)
+    {
+        if (avatar == null || avatar.Length == 0)
+            return BadRequest(new { message = "No file uploaded" });
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg", "image/gif" };
+        if (!allowedTypes.Contains(avatar.ContentType))
+            return BadRequest(new { message = "Only images are allowed (jpeg, png, gif)" });
+
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
+        if (!Directory.Exists(uploadsFolder))
+            Directory.CreateDirectory(uploadsFolder);
+
+        var fileExtension = Path.GetExtension(avatar.FileName);
+        var fileName = $"{userId}_{DateTime.Now.Ticks}{fileExtension}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await avatar.CopyToAsync(stream);
+        }
+
+        var avatarUrl = $"/avatars/{fileName}";
+
+        using var connection = _dbHelper.GetConnection();
+        await connection.OpenAsync();
+
+        string updateSql = "UPDATE Users SET AvatarUrl = @avatarUrl WHERE Id = @userId";
+        using var updateCmd = new MySqlCommand(updateSql, connection);
+        updateCmd.Parameters.AddWithValue("@avatarUrl", avatarUrl);
+        updateCmd.Parameters.AddWithValue("@userId", userId);
+
+        await updateCmd.ExecuteNonQueryAsync();
+
+        return Ok(new { avatarUrl = avatarUrl });
+    }
+
+    [HttpGet("{userId}/avatar")]
+    public async Task<IActionResult> GetAvatar(int userId)
+    {
+        using var connection = _dbHelper.GetConnection();
+        await connection.OpenAsync();
+
+        string sql = "SELECT AvatarUrl FROM Users WHERE Id = @userId";
+        using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@userId", userId);
+
+        var avatarUrl = await cmd.ExecuteScalarAsync();
+        return Ok(new { avatarUrl = avatarUrl?.ToString() });
     }
 }

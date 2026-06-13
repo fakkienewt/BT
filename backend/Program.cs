@@ -1,5 +1,6 @@
 using backend.Database;
 using backend.Services;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,16 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseCors("AllowAngular");
+
+app.UseStaticFiles(); 
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
+    RequestPath = ""
+});
+
 app.UseRouting();
 app.MapControllers();
 
@@ -51,7 +62,7 @@ _ = Task.Run(async () =>
         // await parser.ParseAllWirelessChargers(120);
         // await parser.ParseNewItems(20);
 
-        Console.WriteLine("✅ Парсинг завершён");
+        Console.WriteLine("ПРОГРАММА ЗАПУЩЕНА.");
     }
 });
 

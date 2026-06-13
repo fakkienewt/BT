@@ -4,9 +4,14 @@
     <div class="profile-grid">
         <div class="profile-sidebar">
             <div class="avatar-section">
-                <div class="avatar-placeholder">
-                    <span>{{ getInitials() }}</span>
+                <div class="avatar-placeholder" (click)="triggerFileUpload()">
+                    <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="avatar-image">
+                    <span *ngIf="!user.avatarUrl">{{ getInitials() }}</span>
+                    <div class="avatar-overlay">
+                        <span>📷</span>
+                    </div>
                 </div>
+                <input type="file" #fileInput style="display: none" accept="image/*" (change)="onFileSelected($event)">
                 <h3 class="username">{{ user.username }}</h3>
                 <p class="user-email">{{ user.email }}</p>
             </div>
@@ -26,11 +31,11 @@
                 </button>
             </div>
 
-            <button class="logout-btn" (click)="logout()">
+            <button class="logout-btn" (click)="openLogoutModal()">
                 ВЫЙТИ
             </button>
 
-            <button class="delete-account-btn" (click)="deleteAccount()">
+            <button class="delete-account-btn" (click)="openDeleteModal()">
                 УДАЛИТЬ АККАУНТ
             </button>
         </div>
@@ -47,12 +52,12 @@
                 <div class="form-card">
                     <div class="form-group">
                         <label>ИМЯ ПОЛЬЗОВАТЕЛЯ</label>
-                        <input type="text" [(ngModel)]="user.username">
+                        <input type="text" [(ngModel)]="user.username" placeholder="Введите имя пользователя">
                     </div>
 
                     <div class="form-group">
                         <label>EMAIL</label>
-                        <input type="email" [(ngModel)]="user.email">
+                        <input type="email" [(ngModel)]="user.email" placeholder="example@mail.com">
                     </div>
 
                     <div class="form-group">
@@ -65,9 +70,21 @@
                         <input type="text" [(ngModel)]="user.deliveryAddress" placeholder="г. Минск, ул. ...">
                     </div>
 
-                    <button class="save-btn" (click)="updateProfile()">
-                        СОХРАНИТЬ
+                    <div class="form-group">
+                        <label>ИЗМЕНИТЬ ПАРОЛЬ (опционально)</label>
+                        <input type="password" [(ngModel)]="newPassword" placeholder="Новый пароль">
+                    </div>
+
+                    <button class="save-btn" (click)="updateProfile()" [disabled]="isLoading">
+                        {{ isLoading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ' }}
                     </button>
+
+                    <div class="success-message" *ngIf="successMessage">
+                        {{ successMessage }}
+                    </div>
+                    <div class="error-message" *ngIf="errorMessage">
+                        {{ errorMessage }}
+                    </div>
                 </div>
             </div>
 
@@ -108,16 +125,28 @@
                 <div class="empty-state" *ngIf="favoritesItems.length === 0">
                     <p>ИЗБРАННОЕ ПУСТО</p>
                 </div>
-                <div class="products-grid" *ngIf="favoritesItems.length > 0">
-                    <div class="product-card" *ngFor="let item of favoritesItems" (click)="goToProduct(item.id)">
-                        <div class="product-image">
-                            <img [src]="item.imageUrl[0]" [alt]="item.title">
+                <div class="cart-items-container" *ngIf="favoritesItems.length > 0">
+                    <div class="cart-items">
+                        <div class="cart-item" *ngFor="let item of paginatedFavorites"
+                            (click)="goToProduct(item.productId)">
+                            <img [src]="item.productImage" [alt]="item.productTitle">
+                            <div class="cart-item-info">
+                                <div class="cart-item-brand">{{ item.productBrand }}</div>
+                                <div class="cart-item-title">{{ item.productTitle }}</div>
+                                <div class="cart-item-price">{{ item.productPrice }} BYN</div>
+                            </div>
+                            <div class="cart-item-actions">
+                                <button class="favorite-remove"
+                                    (click)="removeFromFavorites($event, item.productId)">УДАЛИТЬ</button>
+                            </div>
                         </div>
-                        <div class="product-brand">{{ item.brand }}</div>
-                        <div class="product-title">{{ item.title.length > 30 ? (item.title | slice:0:30) + '...' :
-                            item.title }}</div>
-                        <div class="product-price">{{ item.price }} BYN</div>
-                        <button class="product-remove" (click)="removeFromFavorites($event, item.id)">УДАЛИТЬ</button>
+                    </div>
+                    <div class="pagination" *ngIf="favoritesTotalPages > 1">
+                        <button class="page-btn" [disabled]="favoritesCurrentPage === 1"
+                            (click)="favoritesPrevPage()">←</button>
+                        <span class="page-info">{{ favoritesCurrentPage }} / {{ favoritesTotalPages }}</span>
+                        <button class="page-btn" [disabled]="favoritesCurrentPage === favoritesTotalPages"
+                            (click)="favoritesNextPage()">→</button>
                     </div>
                 </div>
             </div>
@@ -126,21 +155,26 @@
                 <div class="empty-state" *ngIf="cartItems.length === 0">
                     <p>КОРЗИНА ПУСТА</p>
                 </div>
-                <div class="cart-items" *ngIf="cartItems.length > 0">
-                    <div class="cart-item" *ngFor="let item of cartItems">
-                        <img [src]="item.imageUrl[0]" [alt]="item.title">
-                        <div class="cart-item-info">
-                            <div class="cart-item-brand">{{ item.brand }}</div>
-                            <div class="cart-item-title">{{ item.title }}</div>
-                            <div class="cart-item-price">{{ item.price }} BYN</div>
-                        </div>
-                        <div class="cart-item-actions">
-                            <div class="quantity-control">
-                                <button (click)="decrementQuantity(item.id)">-</button>
-                                <span>{{ item.quantity || 1 }}</span>
-                                <button (click)="incrementQuantity(item.id)">+</button>
+                <div class="cart-full-container" *ngIf="cartItems.length > 0">
+                    <div class="cart-items-container">
+                        <div class="cart-items">
+                            <div class="cart-item" *ngFor="let item of paginatedCart">
+                                <img [src]="item.productImage" [alt]="item.productTitle">
+                                <div class="cart-item-info">
+                                    <div class="cart-item-brand">{{ item.productBrand }}</div>
+                                    <div class="cart-item-title">{{ item.productTitle }}</div>
+                                    <div class="cart-item-price">{{ item.productPrice }} BYN</div>
+                                </div>
+                                <div class="cart-item-actions">
+                                    <div class="quantity-control">
+                                        <button (click)="decrementQuantity(item.productId)">-</button>
+                                        <span>{{ item.quantity }}</span>
+                                        <button (click)="incrementQuantity(item.productId)">+</button>
+                                    </div>
+                                    <button class="cart-remove"
+                                        (click)="removeFromCart(item.productId)">УДАЛИТЬ</button>
+                                </div>
                             </div>
-                            <button class="cart-remove" (click)="removeFromCart(item.id)">УДАЛИТЬ</button>
                         </div>
                     </div>
                     <div class="cart-summary">
@@ -149,6 +183,12 @@
                             <span class="summary-total">{{ getCartTotal() }} BYN</span>
                         </div>
                         <button class="checkout-btn">ОФОРМИТЬ ЗАКАЗ</button>
+                    </div>
+                    <div class="pagination" *ngIf="cartTotalPages > 1">
+                        <button class="page-btn" [disabled]="cartCurrentPage === 1" (click)="cartPrevPage()">←</button>
+                        <span class="page-info">{{ cartCurrentPage }} / {{ cartTotalPages }}</span>
+                        <button class="page-btn" [disabled]="cartCurrentPage === cartTotalPages"
+                            (click)="cartNextPage()">→</button>
                     </div>
                 </div>
             </div>
@@ -162,6 +202,72 @@
         <div class="skeleton-line wide"></div>
         <div class="skeleton-line medium"></div>
         <div class="skeleton-line"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showLogoutModal" (click)="closeLogoutModal()">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>ВЫХОД ИЗ АККАУНТА</h3>
+            <button class="modal-close" (click)="closeLogoutModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="confirm-text">ВЫ УВЕРЕНЫ, ЧТО ХОТИТЕ ВЫЙТИ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="cancel-btn" (click)="closeLogoutModal()">
+                ОТМЕНА
+            </button>
+            <button class="logout-confirm-btn" (click)="confirmLogout()">
+                ВЫЙТИ
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>УДАЛЕНИЕ АККАУНТА</h3>
+            <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="warning-text">
+                ЭТО ДЕЙСТВИЕ НЕОБРАТИМО. ВСЕ ВАШИ ДАННЫЕ БУДУТ УДАЛЕНЫ:
+            </p>
+            <ul class="delete-list">
+                <li>ЛИЧНАЯ ИНФОРМАЦИЯ</li>
+                <li>ИСТОРИЯ ЗАКАЗОВ</li>
+                <li>ИЗБРАННЫЕ ТОВАРЫ</li>
+                <li>КОРЗИНА</li>
+            </ul>
+            <p class="confirm-text">
+                ДЛЯ ПОДТВЕРЖДЕНИЯ ВВЕДИТЕ СЛОВО "УДАЛИТЬ":
+            </p>
+            <input type="text" class="confirm-input" [(ngModel)]="deleteConfirmText" placeholder="УДАЛИТЬ"
+                [disabled]="isDeleting">
+        </div>
+        <div class="modal-footer">
+            <button class="cancel-btn" (click)="closeDeleteModal()" [disabled]="isDeleting">
+                ОТМЕНА
+            </button>
+            <button class="delete-confirm-btn" (click)="deleteAccount()"
+                [disabled]="isDeleting || deleteConfirmText !== 'УДАЛИТЬ'">
+                {{ isDeleting ? 'УДАЛЕНИЕ...' : 'УДАЛИТЬ АККАУНТ' }}
+            </button>
+        </div>
+        <div class="error-message" *ngIf="errorMessage" style="margin: 0 24px 24px 24px;">
+            {{ errorMessage }}
+        </div>
+    </div>
+</div>
+
+<div class="notification" [class.show]="notification.show" [class.success]="notification.type === 'success'"
+    [class.error]="notification.type === 'error'">
+    <div class="notification-content">
+        <span class="notification-icon">{{ notification.type === 'success' ? '✓' : '⚠' }}</span>
+        <span class="notification-message">{{ notification.message }}</span>
+        <button class="notification-close" (click)="closeNotification()">✕</button>
     </div>
 </div>
 

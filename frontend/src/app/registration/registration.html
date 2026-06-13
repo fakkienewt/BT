@@ -2,43 +2,52 @@
     <div class="auth-card">
         <div class="auth-header">
             <button class="auth-tab" [class.active]="activeTab === 'login'" (click)="switchTab('login')">
-                Вход
+                ВХОД
             </button>
             <button class="auth-tab" [class.active]="activeTab === 'register'" (click)="switchTab('register')">
-                Регистрация
+                РЕГИСТРАЦИЯ
             </button>
         </div>
 
         <div class="auth-form" *ngIf="activeTab === 'login'">
             <div class="form-group">
-                <label>Email</label>
+                <label>EMAIL</label>
                 <input type="email" [(ngModel)]="loginData.email" placeholder="example@mail.com">
             </div>
             <div class="form-group">
-                <label>Пароль</label>
+                <label>ПАРОЛЬ</label>
                 <input type="password" [(ngModel)]="loginData.password" placeholder="••••••••">
             </div>
-            <button class="auth-btn" (click)="onLogin()">Войти</button>
+            <button class="auth-btn" (click)="onLogin()">ВОЙТИ</button>
         </div>
 
         <div class="auth-form" *ngIf="activeTab === 'register'">
             <div class="form-group">
-                <label>Имя пользователя *</label>
+                <label>ИМЯ ПОЛЬЗОВАТЕЛЯ</label>
                 <input type="text" [(ngModel)]="registerData.username" placeholder="username">
             </div>
             <div class="form-group">
-                <label>Email *</label>
+                <label>EMAIL</label>
                 <input type="email" [(ngModel)]="registerData.email" placeholder="example@mail.com">
             </div>
             <div class="form-group">
-                <label>Пароль *</label>
+                <label>ПАРОЛЬ</label>
                 <input type="password" [(ngModel)]="registerData.password" placeholder="••••••••">
             </div>
             <div class="form-group">
-                <label>Подтверждение пароля *</label>
+                <label>ПОДТВЕРЖДЕНИЕ ПАРОЛЯ</label>
                 <input type="password" [(ngModel)]="registerData.confirmPassword" placeholder="••••••••">
             </div>
-            <button class="auth-btn" (click)="onRegister()">Зарегистрироваться</button>
+            <button class="auth-btn" (click)="onRegister()">ЗАРЕГИСТРИРОВАТЬСЯ</button>
         </div>
+    </div>
+</div>
+
+<div class="notification" [class.show]="notification.show" [class.success]="notification.type === 'success'"
+    [class.error]="notification.type === 'error'">
+    <div class="notification-content">
+        <span class="notification-icon">{{ notification.type === 'success' ? '✓' : '⚠' }}</span>
+        <span class="notification-message">{{ notification.message }}</span>
+        <button class="notification-close" (click)="closeNotification()">✕</button>
     </div>
 </div>

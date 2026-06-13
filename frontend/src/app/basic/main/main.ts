@@ -39,17 +39,12 @@ export class Main implements OnInit {
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
-      const category = params['category'];
-      if (category && this.isValidCategory(category)) {
-        this.currentCategory = category as Category;
-        this.showCatalog = false;
-        this.loadCategory(this.currentCategory);
-      } else {
-        this.loadCategory(this.currentCategory);
-      }
+      this.currentCategory = 'phones';
+      this.showCatalog = false;
+      this.service.currentPage = 1;
+      this.loadCategory('phones');
     });
   }
-
   isValidCategory(category: string): boolean {
     return ['phones', 'laptops', 'computers', 'tablets', 'tv'].includes(category);
   }

@@ -302,7 +302,6 @@ public class ParserService
 
     private string ExtractFullProductTitle(HtmlDocument doc, string url)
     {
-        // 1. Пробуем взять из data-dsf (САМЫЙ НАДЁЖНЫЙ источник!)
         var dsfNode = doc.DocumentNode.SelectSingleNode("//a[@data-dsf]");
         if (dsfNode != null)
         {
@@ -390,7 +389,6 @@ public class ParserService
     {
         if (string.IsNullOrWhiteSpace(title)) return string.Empty;
 
-        // 1. HTML entities
         string cleaned = title
             .Replace("&quot;", " ")
             .Replace("&laquo;", " ")

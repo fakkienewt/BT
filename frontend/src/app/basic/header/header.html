@@ -5,13 +5,14 @@
     </div>
 
     <div class="header-container-input-search">
-        <img src="assets/search-icon.png" class="header-search-icon">
-        <input class="header-input-search" placeholder="Поиск по миллионам товаров...">
+        <img src="assets/search-icon.png" class="header-search-icon" (click)="search()">
+        <input class="header-input-search" placeholder="Поиск по миллионам товаров..." [(ngModel)]="searchTerm"
+            (keyup.enter)="search()">
     </div>
-
+    
     <div class="header">
         <div class="header-container-card">
-            <button class="header-button-card">
+            <button class="header-button-card" (click)="goToCart()">
                 <img src="assets/card-icon.png">
             </button>
         </div>
@@ -21,5 +22,13 @@
                 <img src="assets/user-icon.png">
             </button>
         </div>
+    </div>
+</div>
+
+<div class="notification" [class.show]="notification.show" [class.error]="notification.type === 'error'">
+    <div class="notification-content">
+        <span class="notification-icon">⚠</span>
+        <span class="notification-message">{{ notification.message }}</span>
+        <button class="notification-close" (click)="closeNotification()">✕</button>
     </div>
 </div>

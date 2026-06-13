@@ -126,4 +126,8 @@ export class ServiceMain {
   public getProductById(id: number): Observable<ModelProduct> {
     return this.http.get<ModelProduct>(`${this.baseURL}/products/${id}`);
   }
+
+  searchProducts(query: string): Observable<ModelProduct[]> {
+    return this.http.get<ModelProduct[]>(`${this.baseURL}/search?q=${query}`);
+  }
 }

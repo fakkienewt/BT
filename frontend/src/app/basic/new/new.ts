@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, HostListener } from '@angular/core';
+import { Router } from '@angular/router';
 import { ServiceMain } from '../../services/service-main';
 import { ModelProduct } from '../../models/model-product';
 
@@ -16,7 +17,10 @@ export class New implements OnInit {
   startIndex = 0;
   itemsPerPage = 6;
 
-  constructor(private service: ServiceMain) { }
+  constructor(
+    private service: ServiceMain,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.loadNewItems();
@@ -70,6 +74,10 @@ export class New implements OnInit {
     if (!this.hasPrev) return;
     this.startIndex--;
     this.updateDisplayedProducts();
+  }
+
+  goToProduct(productId: number): void {
+    this.router.navigate(['/product', productId]);
   }
 
   get hasPrev(): boolean {

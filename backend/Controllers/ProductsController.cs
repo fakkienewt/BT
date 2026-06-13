@@ -242,4 +242,104 @@ public class ProductsController : ControllerBase
 
         return Ok(productsDict.Values.ToList());
     }
+
+    [HttpGet("product/{id}")]
+    public async Task<IActionResult> GetProductById(int id)
+    {
+        using var connection = _dbHelper.GetConnection();
+        await connection.OpenAsync();
+
+        string sql = @"
+        SELECT p.Id, p.Title, p.Price, p.Brand, p.Category, pi.ImageUrl
+        FROM Products p
+        LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+        WHERE p.Id = @id
+        ORDER BY pi.OrderIndex";
+
+        using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@id", id);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        ModelProduct product = null;
+        var images = new List<string>();
+
+        while (await reader.ReadAsync())
+        {
+            if (product == null)
+            {
+                product = new ModelProduct
+                {
+                    Id = Convert.ToInt32(reader["Id"]),
+                    Title = reader["Title"]?.ToString() ?? "",
+                    Price = Convert.ToDecimal(reader["Price"]),
+                    Brand = reader["Brand"]?.ToString() ?? "",
+                    Category = reader["Category"]?.ToString() ?? "",
+                    ImageUrl = new List<string>()
+                };
+            }
+
+            string imageUrl = reader["ImageUrl"]?.ToString();
+            if (!string.IsNullOrEmpty(imageUrl) && !images.Contains(imageUrl))
+            {
+                images.Add(imageUrl);
+                product.ImageUrl.Add(imageUrl);
+            }
+        }
+
+        if (product == null)
+            return NotFound(new { message = "Product not found" });
+
+        return Ok(product);
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchProducts([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+            return Ok(new List<ModelProduct>());
+
+        var productsDict = new Dictionary<int, ModelProduct>();
+
+        using var connection = _dbHelper.GetConnection();
+        await connection.OpenAsync();
+
+        string sql = @"
+        SELECT p.Id, p.Title, p.Price, p.Brand, p.Category, pi.ImageUrl
+        FROM Products p
+        LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+        WHERE p.Title LIKE @search OR p.Brand LIKE @search
+        ORDER BY p.Id, pi.OrderIndex";
+
+        using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@search", $"%{q}%");
+
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            int id = Convert.ToInt32(reader["Id"]);
+
+            if (!productsDict.ContainsKey(id))
+            {
+                productsDict[id] = new ModelProduct
+                {
+                    Id = id,
+                    Title = reader["Title"]?.ToString() ?? "",
+                    Price = Convert.ToDecimal(reader["Price"]),
+                    Brand = reader["Brand"]?.ToString() ?? "",
+                    Category = reader["Category"]?.ToString() ?? "",
+                    ImageUrl = new List<string>()
+                };
+            }
+
+            string imageUrl = reader["ImageUrl"]?.ToString();
+            if (!string.IsNullOrEmpty(imageUrl) && !productsDict[id].ImageUrl.Contains(imageUrl))
+            {
+                productsDict[id].ImageUrl.Add(imageUrl);
+            }
+        }
+
+        return Ok(productsDict.Values.ToList());
+    }
 }

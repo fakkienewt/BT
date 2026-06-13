@@ -8,4 +8,5 @@ export interface ModelUser {
     lastName?: string;
     deliveryAddress?: string;
     birthDate?: string;
+    avatarUrl?: string;  
 }

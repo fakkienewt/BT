@@ -1,0 +1,63 @@
+<div class="page-wrapper">
+    <app-header></app-header>
+
+    <div class="search-container">
+        <div class="search-header">
+            <div class="search-title-wrapper">
+                <h2 class="search-title">РЕЗУЛЬТАТЫ ПОИСКА</h2>
+                <div class="search-query" *ngIf="searchQuery">
+                    <span class="query-label">ЗАПРОС:</span>
+                    <span class="query-text">"{{ searchQuery }}"</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-products-section">
+            <div class="section-bar">ТОВАРЫ</div>
+
+            <div class="products-card">
+                <div class="products-grid" *ngIf="loading">
+                    <div *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]" class="product-skeleton">
+                        <div class="skeleton-poster"></div>
+                        <div class="skeleton-lines">
+                            <div class="line-up"></div>
+                            <div class="line-down"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="products-grid" *ngIf="!loading && products.length > 0">
+                    <div class="product-card" *ngFor="let product of products" (click)="goToProduct(product.id)">
+                        <div class="product-image">
+                            <img [src]="product.imageUrl[0] || 'https://via.placeholder.com/200'" [alt]="product.title">
+                        </div>
+                        <div class="product-info">
+                            <div class="product-brand" *ngIf="product.brand">{{ product.brand }}</div>
+                            <div class="product-title">{{ product.title | slice:0:35 }}{{ product.title.length > 35 ?
+                                '...' : '' }}</div>
+                            <div class="product-price">{{ product.price | number:'1.2-2' }} BYN</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="no-data" *ngIf="!loading && noResults">
+                    <div class="no-results-icon">🔍</div>
+                    <p>НИЧЕГО НЕ НАЙДЕНО</p>
+                    <p class="no-data-hint">Попробуйте изменить поисковый запрос</p>
+                    <button class="no-results-btn" (click)="goToMain()">НА ГЛАВНУЮ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" [class.show]="notification.show" [class.success]="notification.type === 'success'"
+        [class.error]="notification.type === 'error'">
+        <div class="notification-content">
+            <span class="notification-icon">{{ notification.type === 'success' ? '✓' : '⚠' }}</span>
+            <span class="notification-message">{{ notification.message }}</span>
+            <button class="notification-close" (click)="closeNotification()">✕</button>
+        </div>
+    </div>
+
+    <app-footer></app-footer>
+</div>
