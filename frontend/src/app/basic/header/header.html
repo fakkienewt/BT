@@ -1,5 +1,5 @@
 <div class="main-header">
-    <div class="header-container-logo">
+    <div class="header-container-logo" (click)="goToMain()" style="cursor: pointer;">
         <div class="header-text-logo-buy">Buy</div>
         <div class="header-text-logo-tech">Tech</div>
     </div>
@@ -17,9 +17,9 @@
         </div>
 
         <div class="header-container-profile">
-            <button class="header-button-profile">
+            <button class="header-button-profile" (click)="goToAuth()">
                 <img src="assets/user-icon.png">
             </button>
         </div>
     </div>
-</div> 
+</div>

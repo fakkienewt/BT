@@ -39,7 +39,7 @@
                 </div>
 
                 <div class="products-grid" *ngIf="!loading && products.length > 0">
-                    <div class="product-card" *ngFor="let product of products">
+                    <div class="product-card" *ngFor="let product of products" (click)="goToProduct(product.id)">
                         <div class="product-image">
                             <img [src]="product.imageUrl[0] || 'https://via.placeholder.com/200'" [alt]="product.title"
                                 loading="lazy">
@@ -73,3 +73,4 @@
         </div>
     </div>
 </div>
+

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModelProduct } from '../../models/model-product';
 import { ServiceMain } from '../../services/service-main';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-catalog',
@@ -20,7 +21,11 @@ export class Catalog implements OnInit {
   noData: boolean = false;
   pageSize: number = 18;
 
-  constructor(public service: ServiceMain) { }
+  constructor(public service: ServiceMain, private router: Router) { }
+
+  goToProduct(productId: number): void {
+    this.router.navigate(['/product', productId]);
+  }
 
   ngOnInit(): void {
     this.selectCategory('phones');
@@ -72,7 +77,7 @@ export class Catalog implements OnInit {
       { id: 'cables', name: 'Кабели и зарядки', apiMethod: 'cables', brand: '' },
       { id: 'wireless', name: 'Беспроводные зарядные', apiMethod: 'wireless', brand: '' },
       { id: 'batteries', name: 'Батарейки и аккумуляторы', apiMethod: 'batteries', brand: '' },
-            { id: 'powerbanks', name: 'Повербанк', apiMethod: 'powerbanks', brand: '' },
+      { id: 'powerbanks', name: 'Повербанк', apiMethod: 'powerbanks', brand: '' },
     ]
   };
 

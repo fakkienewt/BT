@@ -1,0 +1,168 @@
+<app-header></app-header>
+
+<div class="profile-container" *ngIf="!loading">
+    <div class="profile-grid">
+        <div class="profile-sidebar">
+            <div class="avatar-section">
+                <div class="avatar-placeholder">
+                    <span>{{ getInitials() }}</span>
+                </div>
+                <h3 class="username">{{ user.username }}</h3>
+                <p class="user-email">{{ user.email }}</p>
+            </div>
+
+            <div class="sidebar-menu">
+                <button class="menu-item" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+                    ПРОФИЛЬ
+                </button>
+                <button class="menu-item" [class.active]="activeTab === 'orders'" (click)="activeTab = 'orders'">
+                    ЗАКАЗЫ
+                </button>
+                <button class="menu-item" [class.active]="activeTab === 'favorites'" (click)="activeTab = 'favorites'">
+                    ИЗБРАННОЕ
+                </button>
+                <button class="menu-item" [class.active]="activeTab === 'cart'" (click)="activeTab = 'cart'">
+                    КОРЗИНА
+                </button>
+            </div>
+
+            <button class="logout-btn" (click)="logout()">
+                ВЫЙТИ
+            </button>
+
+            <button class="delete-account-btn" (click)="deleteAccount()">
+                УДАЛИТЬ АККАУНТ
+            </button>
+        </div>
+
+        <div class="profile-content">
+            <div class="content-header">
+                <span class="content-title">{{ getTabTitle() }}</span>
+                <div class="content-stats" *ngIf="activeTab === 'orders'">ВСЕГО: {{ orders.length }}</div>
+                <div class="content-stats" *ngIf="activeTab === 'favorites'">ВСЕГО: {{ favoritesItems.length }}</div>
+                <div class="content-stats" *ngIf="activeTab === 'cart'">ВСЕГО: {{ cartItems.length }}</div>
+            </div>
+
+            <div class="tab-content" *ngIf="activeTab === 'profile'">
+                <div class="form-card">
+                    <div class="form-group">
+                        <label>ИМЯ ПОЛЬЗОВАТЕЛЯ</label>
+                        <input type="text" [(ngModel)]="user.username">
+                    </div>
+
+                    <div class="form-group">
+                        <label>EMAIL</label>
+                        <input type="email" [(ngModel)]="user.email">
+                    </div>
+
+                    <div class="form-group">
+                        <label>ТЕЛЕФОН</label>
+                        <input type="tel" [(ngModel)]="user.phoneNumber" placeholder="+375 XX XXX-XX-XX">
+                    </div>
+
+                    <div class="form-group">
+                        <label>АДРЕС ДОСТАВКИ</label>
+                        <input type="text" [(ngModel)]="user.deliveryAddress" placeholder="г. Минск, ул. ...">
+                    </div>
+
+                    <button class="save-btn" (click)="updateProfile()">
+                        СОХРАНИТЬ
+                    </button>
+                </div>
+            </div>
+
+            <div class="tab-content" *ngIf="activeTab === 'orders'">
+                <div class="empty-state" *ngIf="orders.length === 0">
+                    <p>ЗАКАЗОВ НЕТ</p>
+                </div>
+                <div class="orders-list" *ngIf="orders.length > 0">
+                    <div class="order-card" *ngFor="let order of orders">
+                        <div class="order-header">
+                            <span class="order-id">ЗАКАЗ #{{ order.id }}</span>
+                            <span class="order-date">{{ order.date }}</span>
+                            <span class="order-status" [class.completed]="order.status === 'completed'">
+                                {{ order.status === 'completed' ? 'ВЫПОЛНЕН' : 'В ОБРАБОТКЕ' }}
+                            </span>
+                        </div>
+                        <div class="order-items">
+                            <div class="order-item" *ngFor="let item of order.items.slice(0, 2)">
+                                <img [src]="item.imageUrl" [alt]="item.title">
+                                <div class="order-item-info">
+                                    <div class="order-item-title">{{ item.title }}</div>
+                                    <div class="order-item-price">{{ item.price }} BYN</div>
+                                </div>
+                            </div>
+                            <div class="order-more" *ngIf="order.items.length > 2">
+                                + ЕЩЕ {{ order.items.length - 2 }}
+                            </div>
+                        </div>
+                        <div class="order-footer">
+                            <span class="order-total">СУММА: {{ order.total }} BYN</span>
+                            <button class="order-repeat">ПОВТОРИТЬ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" *ngIf="activeTab === 'favorites'">
+                <div class="empty-state" *ngIf="favoritesItems.length === 0">
+                    <p>ИЗБРАННОЕ ПУСТО</p>
+                </div>
+                <div class="products-grid" *ngIf="favoritesItems.length > 0">
+                    <div class="product-card" *ngFor="let item of favoritesItems" (click)="goToProduct(item.id)">
+                        <div class="product-image">
+                            <img [src]="item.imageUrl[0]" [alt]="item.title">
+                        </div>
+                        <div class="product-brand">{{ item.brand }}</div>
+                        <div class="product-title">{{ item.title.length > 30 ? (item.title | slice:0:30) + '...' :
+                            item.title }}</div>
+                        <div class="product-price">{{ item.price }} BYN</div>
+                        <button class="product-remove" (click)="removeFromFavorites($event, item.id)">УДАЛИТЬ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" *ngIf="activeTab === 'cart'">
+                <div class="empty-state" *ngIf="cartItems.length === 0">
+                    <p>КОРЗИНА ПУСТА</p>
+                </div>
+                <div class="cart-items" *ngIf="cartItems.length > 0">
+                    <div class="cart-item" *ngFor="let item of cartItems">
+                        <img [src]="item.imageUrl[0]" [alt]="item.title">
+                        <div class="cart-item-info">
+                            <div class="cart-item-brand">{{ item.brand }}</div>
+                            <div class="cart-item-title">{{ item.title }}</div>
+                            <div class="cart-item-price">{{ item.price }} BYN</div>
+                        </div>
+                        <div class="cart-item-actions">
+                            <div class="quantity-control">
+                                <button (click)="decrementQuantity(item.id)">-</button>
+                                <span>{{ item.quantity || 1 }}</span>
+                                <button (click)="incrementQuantity(item.id)">+</button>
+                            </div>
+                            <button class="cart-remove" (click)="removeFromCart(item.id)">УДАЛИТЬ</button>
+                        </div>
+                    </div>
+                    <div class="cart-summary">
+                        <div class="summary-line">
+                            <span>ИТОГО:</span>
+                            <span class="summary-total">{{ getCartTotal() }} BYN</span>
+                        </div>
+                        <button class="checkout-btn">ОФОРМИТЬ ЗАКАЗ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="skeleton-profile" *ngIf="loading">
+    <div class="skeleton-sidebar"></div>
+    <div class="skeleton-content">
+        <div class="skeleton-line wide"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line"></div>
+    </div>
+</div>
+
+<app-footer></app-footer>

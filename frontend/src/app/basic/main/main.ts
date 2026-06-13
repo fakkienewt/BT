@@ -5,13 +5,16 @@ import { ModelProduct } from '../../models/model-product';
 import { Observable } from 'rxjs';
 import { New } from '../new/new';
 import { Catalog } from '../catalog/catalog';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Header } from '../header/header';
+import { Footer } from '../footer/footer';
 
 type Category = 'phones' | 'laptops' | 'computers' | 'tablets' | 'tv';
 
 @Component({
   selector: 'app-main',
   standalone: true,
-  imports: [CommonModule, New, Catalog],
+  imports: [CommonModule, New, Catalog, Header, Footer],
   templateUrl: './main.html',
   styleUrl: './main.scss',
 })
@@ -24,10 +27,31 @@ export class Main implements OnInit {
   loading = false;
   pageSize = 18;
 
-  constructor(public service: ServiceMain) { }
+  constructor(
+    public service: ServiceMain,
+    private router: Router,
+    private route: ActivatedRoute
+  ) { }
+
+  goToProduct(productId: number): void {
+    this.router.navigate(['/product', productId]);
+  }
 
   ngOnInit(): void {
-    this.loadCategory(this.currentCategory);
+    this.route.queryParams.subscribe(params => {
+      const category = params['category'];
+      if (category && this.isValidCategory(category)) {
+        this.currentCategory = category as Category;
+        this.showCatalog = false;
+        this.loadCategory(this.currentCategory);
+      } else {
+        this.loadCategory(this.currentCategory);
+      }
+    });
+  }
+
+  isValidCategory(category: string): boolean {
+    return ['phones', 'laptops', 'computers', 'tablets', 'tv'].includes(category);
   }
 
   loadCategory(category: Category): void {

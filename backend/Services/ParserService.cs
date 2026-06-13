@@ -2,6 +2,7 @@ using HtmlAgilityPack;
 using MySql.Data.MySqlClient;
 using backend.Database;
 using backend.Models;
+using System.Text.RegularExpressions;
 
 namespace backend.Services;
 
@@ -29,6 +30,7 @@ public class ParserService
     private readonly string _baseUrlWirelessChargers = "https://xistore.by/catalog/besprovodnyye_zaryadnyye/";
 
     private int _parsedCount = 0;
+    private const int MinTitleLength = 3;
 
     public ParserService(DbHelper dbHelper)
     {
@@ -149,18 +151,45 @@ public class ParserService
         await ParseCategory(_baseUrlWirelessChargers, "wireless_chargers", maxItems);
     }
 
-    private async Task ClearDatabase()
+    public async Task ParseNewItems(int maxItems = 20)
     {
-        using var conn = _dbHelper.GetConnection();
-        await conn.OpenAsync();
+        _parsedCount = 0;
+        var processedUrls = new HashSet<string>();
+        var allowedCategories = new HashSet<string>
+        {
+            "phones", "laptops", "computers", "tablets", "smart_televizory",
+            "monitory", "pristavki", "smart_watches", "fitness_bracelets",
+            "gaming_keyboards", "gaming_consoles", "gaming_mice",
+            "microphones", "speakers", "headphones", "cables_chargers",
+            "batteries", "wireless_chargers"
+        };
 
-        using var cmd1 = new MySqlCommand("DELETE FROM ProductImages", conn);
-        await cmd1.ExecuteNonQueryAsync();
+        string url = "https://xistore.by/new/";
+        string html = await _httpClient.GetStringAsync(url);
+        var doc = new HtmlDocument();
+        doc.LoadHtml(html);
 
-        using var cmd2 = new MySqlCommand("DELETE FROM Products", conn);
-        await cmd2.ExecuteNonQueryAsync();
+        var productCards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'search__page_item')]");
+        if (productCards == null) return;
 
-        Console.WriteLine("🗑️ База данных очищена");
+        foreach (var card in productCards)
+        {
+            if (_parsedCount >= maxItems) break;
+
+            string productUrl = ExtractProductUrl(card);
+            if (string.IsNullOrEmpty(productUrl)) continue;
+
+            if (processedUrls.Contains(productUrl)) continue;
+            processedUrls.Add(productUrl);
+
+            string category = DetermineCategoryFromUrl(productUrl);
+            if (!allowedCategories.Contains(category)) continue;
+
+            await ParseProductPage(productUrl, category);
+            await Task.Delay(500);
+        }
+
+        Console.WriteLine($"✅ Спаршено новинок: {_parsedCount}");
     }
 
     private async Task ParseCategory(string baseUrl, string category, int maxItems)
@@ -238,9 +267,19 @@ public class ParserService
             var product = new ModelProduct();
             product.ImageUrl = new List<string>();
 
-            var titleNode = doc.DocumentNode.SelectSingleNode("//h1");
-            product.Title = titleNode?.InnerText.Trim() ?? "";
-            if (string.IsNullOrEmpty(product.Title)) return;
+            string fullTitle = ExtractFullProductTitle(doc, url);
+
+            if (string.IsNullOrEmpty(fullTitle)) return;
+
+            string cleanedTitle = CleanTitleStrong(fullTitle);
+
+            if (string.IsNullOrEmpty(cleanedTitle) || cleanedTitle.Length < MinTitleLength)
+            {
+                Console.WriteLine($"🚫 Пропущен мусорный товар: '{fullTitle}' -> очищено: '{cleanedTitle}'");
+                return;
+            }
+
+            product.Title = cleanedTitle;
 
             product.Price = ExtractPrice(doc);
             if (product.Price == 0) return;
@@ -259,6 +298,170 @@ public class ParserService
         {
             Console.WriteLine($"🔴 Ошибка {url}: {ex.Message}");
         }
+    }
+
+    private string ExtractFullProductTitle(HtmlDocument doc, string url)
+    {
+        // 1. Пробуем взять из data-dsf (САМЫЙ НАДЁЖНЫЙ источник!)
+        var dsfNode = doc.DocumentNode.SelectSingleNode("//a[@data-dsf]");
+        if (dsfNode != null)
+        {
+            string dsfTitle = dsfNode.GetAttributeValue("data-dsf", "");
+            if (!string.IsNullOrEmpty(dsfTitle) && dsfTitle.Length > 10)
+            {
+                Console.WriteLine($"✅ Найдено полное название из data-dsf: {dsfTitle}");
+                return dsfTitle;
+            }
+        }
+
+        var metaTitle = doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']/@content");
+        if (metaTitle != null)
+        {
+            string title = metaTitle.GetAttributeValue("content", "").Trim();
+            if (!string.IsNullOrEmpty(title) && title.Length > 10 && !title.Contains("...") && !title.Contains("…"))
+                return title;
+        }
+
+        var metaNameTitle = doc.DocumentNode.SelectSingleNode("//meta[@name='title']/@content");
+        if (metaNameTitle != null)
+        {
+            string title = metaNameTitle.GetAttributeValue("content", "").Trim();
+            if (!string.IsNullOrEmpty(title) && title.Length > 10 && !title.Contains("...") && !title.Contains("…"))
+                return title;
+        }
+
+        var jsonLd = doc.DocumentNode.SelectSingleNode("//script[@type='application/ld+json']");
+        if (jsonLd != null)
+        {
+            string json = jsonLd.InnerText;
+            var match = Regex.Match(json, @"""name""\s*:\s*""([^""]{10,})""");
+            if (match.Success)
+            {
+                string title = match.Groups[1].Value;
+                if (!string.IsNullOrEmpty(title) && !title.Contains("...") && !title.Contains("…"))
+                    return title;
+            }
+        }
+
+        var h1 = doc.DocumentNode.SelectSingleNode("//h1");
+        var breadcrumbs = doc.DocumentNode.SelectNodes("//ul[@id='breadcrumbs']//li/a");
+
+        if (h1 != null)
+        {
+            string h1Title = h1.InnerText.Trim();
+
+            if (h1Title.Contains("...") || h1Title.Contains("…") || h1Title.Length < 20)
+            {
+                if (breadcrumbs != null && breadcrumbs.Count >= 2)
+                {
+                    string lastCrumb = breadcrumbs[breadcrumbs.Count - 1].InnerText.Trim();
+                    if (!string.IsNullOrEmpty(lastCrumb) && lastCrumb.Length > h1Title.Length)
+                    {
+                        string cleanedH1 = Regex.Replace(h1Title, @"\.\.\.+|…+$", "").Trim();
+                        return $"{cleanedH1} {lastCrumb}".Trim();
+                    }
+                }
+            }
+
+            if (h1Title.Length > 10 && !h1Title.Contains("...") && !h1Title.Contains("…"))
+                return h1Title;
+        }
+
+        var titleNode = doc.DocumentNode.SelectSingleNode("//title");
+        if (titleNode != null)
+        {
+            string pageTitle = titleNode.InnerText.Trim();
+            pageTitle = Regex.Replace(pageTitle, @"\s*[|\-–—]\s*(Xistore|xistore|купить|цена|каталог).*$", "", RegexOptions.IgnoreCase);
+            if (!string.IsNullOrEmpty(pageTitle) && pageTitle.Length > 10 && !pageTitle.Contains("..."))
+                return pageTitle;
+        }
+
+        if (breadcrumbs != null && breadcrumbs.Count >= 2)
+        {
+            string lastCrumb = breadcrumbs[breadcrumbs.Count - 1].InnerText.Trim();
+            if (lastCrumb.Length > 10)
+                return lastCrumb;
+        }
+
+        return null;
+    }
+
+    private string CleanTitleStrong(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return string.Empty;
+
+        // 1. HTML entities
+        string cleaned = title
+            .Replace("&quot;", " ")
+            .Replace("&laquo;", " ")
+            .Replace("&raquo;", " ")
+            .Replace("&ldquo;", " ")
+            .Replace("&rdquo;", " ")
+            .Replace("&lsquo;", " ")
+            .Replace("&rsquo;", " ")
+            .Replace("&#34;", " ")
+            .Replace("&#171;", " ")
+            .Replace("&#187;", " ");
+
+        cleaned = Regex.Replace(cleaned, @"[\""\u0022\u2033\u2036\u201D\u201C\u201F'`´‘’‛“”„«»‹›]", " ");
+
+        cleaned = Regex.Replace(cleaned, @"\b(quote|quot|laquo|raquo|ldquo|rdquo|lsquo|rsquo)\b", " ", RegexOptions.IgnoreCase);
+
+        cleaned = cleaned.Replace("б/у", "б_у_защита");
+        cleaned = cleaned.Replace("б\\у", "б_у_защита");
+        cleaned = Regex.Replace(cleaned, @"[/\\]+", " ");
+        cleaned = cleaned.Replace("б_у_защита", "б/у");
+
+        cleaned = Regex.Replace(cleaned, @"([\-\.\*=_/\\])\1{2,}", " ");
+
+        cleaned = Regex.Replace(cleaned, @"\s*\d+(?:[.,]\d+)?\s*(?:дюйм\w*|inch|in|[\""\u0022\u2033\u2036])\s*", " ", RegexOptions.IgnoreCase);
+
+        cleaned = Regex.Replace(cleaned, @"\.{2,}$|…+$|\.$", "");
+        cleaned = Regex.Replace(cleaned, @"\s+\.\.\.\s+", " ");
+
+        cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
+
+        if (cleaned.Length < MinTitleLength || Regex.IsMatch(cleaned, @"^\d+$"))
+            return string.Empty;
+
+        return cleaned;
+    }
+
+    private string DetermineCategoryFromUrl(string url)
+    {
+        if (url.Contains("/catalog/telefony/")) return "phones";
+        if (url.Contains("/catalog/noutbuki_/")) return "laptops";
+        if (url.Contains("/catalog/computers/")) return "computers";
+        if (url.Contains("/catalog/planshety_/")) return "tablets";
+        if (url.Contains("/catalog/smart_televizory/")) return "smart_televizory";
+        if (url.Contains("/catalog/monitory/")) return "monitory";
+        if (url.Contains("/catalog/pristavki/")) return "pristavki";
+        if (url.Contains("/catalog/smart_chasy/")) return "smart_watches";
+        if (url.Contains("/catalog/fitnes_braslety/")) return "fitness_bracelets";
+        if (url.Contains("/catalog/gaming_keyboards/")) return "gaming_keyboards";
+        if (url.Contains("/catalog/gaming_consoles/")) return "gaming_consoles";
+        if (url.Contains("/catalog/gaming_mouse/")) return "gaming_mice";
+        if (url.Contains("/catalog/mikrofony/")) return "microphones";
+        if (url.Contains("/catalog/kolonki/")) return "speakers";
+        if (url.Contains("/catalog/nakladnyye_naushniki/")) return "headphones";
+        if (url.Contains("/catalog/kabelya_i_zaryadki/")) return "cables_chargers";
+        if (url.Contains("/catalog/batareyki/")) return "batteries";
+        if (url.Contains("/catalog/besprovodnyye_zaryadnyye/")) return "wireless_chargers";
+        return "unknown";
+    }
+
+    private async Task ClearDatabase()
+    {
+        using var conn = _dbHelper.GetConnection();
+        await conn.OpenAsync();
+
+        using var cmd1 = new MySqlCommand("DELETE FROM ProductImages", conn);
+        await cmd1.ExecuteNonQueryAsync();
+
+        using var cmd2 = new MySqlCommand("DELETE FROM Products", conn);
+        await cmd2.ExecuteNonQueryAsync();
+
+        Console.WriteLine("🗑️ База данных очищена");
     }
 
     private decimal ExtractPrice(HtmlDocument doc)
@@ -281,7 +484,7 @@ public class ParserService
                 if (selector.Contains("meta") || selector.Contains("@content"))
                     priceStr = node.GetAttributeValue("content", "");
 
-                priceStr = System.Text.RegularExpressions.Regex.Replace(priceStr, @"[^0-9,\.]", "");
+                priceStr = Regex.Replace(priceStr, @"[^0-9,\.]", "");
                 if (decimal.TryParse(priceStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal price))
                     return price;
             }
@@ -326,7 +529,8 @@ public class ParserService
         var h1 = doc.DocumentNode.SelectSingleNode("//h1");
         if (h1 != null)
         {
-            string[] words = h1.InnerText.Trim().Split(' ');
+            string cleaned = CleanTitleStrong(h1.InnerText.Trim());
+            string[] words = cleaned.Split(' ');
             foreach (var word in words)
             {
                 if (word.Length >= 3 && word.Length < 20 && char.IsUpper(word[0]))
@@ -407,14 +611,22 @@ public class ParserService
         using var conn = _dbHelper.GetConnection();
         await conn.OpenAsync();
 
+        string cleanedTitle = CleanTitleStrong(product.Title);
+
+        if (string.IsNullOrEmpty(cleanedTitle) || cleanedTitle.Length < MinTitleLength)
+        {
+            Console.WriteLine($"🚫 Пропущен товар с мусорным названием: {product.Title}");
+            return;
+        }
+
         string checkSql = "SELECT COUNT(*) FROM Products WHERE Title = @title";
         using var checkCmd = new MySqlCommand(checkSql, conn);
-        checkCmd.Parameters.AddWithValue("@title", product.Title);
+        checkCmd.Parameters.AddWithValue("@title", cleanedTitle);
         int exists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
 
         if (exists > 0)
         {
-            Console.WriteLine($"⚠️ Дубль пропущен: {product.Title}");
+            Console.WriteLine($"⚠️ Дубль пропущен: {cleanedTitle}");
             return;
         }
 
@@ -423,12 +635,12 @@ public class ParserService
         try
         {
             string sqlProduct = @"
-                INSERT INTO Products (Title, Price, Brand, Category) 
-                VALUES (@title, @price, @brand, @category);
-                SELECT LAST_INSERT_ID();";
+            INSERT INTO Products (Title, Price, Brand, Category) 
+            VALUES (@title, @price, @brand, @category);
+            SELECT LAST_INSERT_ID();";
 
             using var cmd = new MySqlCommand(sqlProduct, conn, transaction);
-            cmd.Parameters.AddWithValue("@title", product.Title);
+            cmd.Parameters.AddWithValue("@title", cleanedTitle);
             cmd.Parameters.AddWithValue("@price", product.Price);
             cmd.Parameters.AddWithValue("@brand", string.IsNullOrEmpty(product.Brand) ? DBNull.Value : (object)product.Brand);
             cmd.Parameters.AddWithValue("@category", product.Category);

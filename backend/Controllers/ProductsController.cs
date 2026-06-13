@@ -179,4 +179,67 @@ public class ProductsController : ControllerBase
 
         return Ok(productsDict.Values.ToList());
     }
+
+    [HttpGet("new")]
+    public async Task<IActionResult> GetNewItems([FromQuery] int limit = 15)
+    {
+        var allowedCategories = new HashSet<string>
+    {
+        "phones", "laptops", "computers", "tablets", "smart_televizory",
+        "monitory", "pristavki", "smart_watches", "fitness_bracelets",
+        "gaming_keyboards", "gaming_consoles", "gaming_mice",
+        "microphones", "speakers", "headphones", "cables_chargers",
+        "batteries", "wireless_chargers"
+    };
+
+        var productsDict = new Dictionary<int, ModelProduct>();
+
+        using var connection = _dbHelper.GetConnection();
+        await connection.OpenAsync();
+
+        string sql = @"
+        SELECT p.Id, p.Title, p.Price, p.Brand, p.Category, pi.ImageUrl
+        FROM Products p
+        LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+        WHERE p.Category IN (
+            'phones', 'laptops', 'computers', 'tablets', 'smart_televizory',
+            'monitory', 'pristavki', 'smart_watches', 'fitness_bracelets',
+            'gaming_keyboards', 'gaming_consoles', 'gaming_mice',
+            'microphones', 'speakers', 'headphones', 'cables_chargers',
+            'batteries', 'wireless_chargers'
+        )
+        ORDER BY p.Id DESC
+        LIMIT @limit";
+
+        using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@limit", limit);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            int id = Convert.ToInt32(reader["Id"]);
+
+            if (!productsDict.ContainsKey(id))
+            {
+                productsDict[id] = new ModelProduct
+                {
+                    Id = id,
+                    Title = reader["Title"]?.ToString() ?? "",
+                    Price = Convert.ToDecimal(reader["Price"]),
+                    Brand = reader["Brand"]?.ToString() ?? "",
+                    Category = reader["Category"]?.ToString() ?? "",
+                    ImageUrl = new List<string>()
+                };
+            }
+
+            string imageUrl = reader["ImageUrl"]?.ToString();
+            if (!string.IsNullOrEmpty(imageUrl) && !productsDict[id].ImageUrl.Contains(imageUrl))
+            {
+                productsDict[id].ImageUrl.Add(imageUrl);
+            }
+        }
+
+        return Ok(productsDict.Values.ToList());
+    }
 }

@@ -1,0 +1,116 @@
+<app-header></app-header>
+<div class="product-detail-container" *ngIf="product">
+    <div class="breadcrumb">
+        <span class="breadcrumb-item">Главная</span>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item">Каталог</span>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item">{{ getCategoryName(product.category) }}</span>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item">{{ product.brand }}</span>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item active">{{ product.title | slice:0:40 }}</span>
+    </div>
+
+    <div class="product-main">
+        <div class="product-gallery">
+            <div class="gallery-badge" *ngIf="product.price > 1000">ХИТ ПРОДАЖ</div>
+            <div class="gallery-main">
+                <img [src]="product.imageUrl[selectedImageIndex]" [alt]="product.title">
+            </div>
+            <div class="gallery-thumbnails" *ngIf="product.imageUrl.length > 1">
+                <div *ngFor="let img of product.imageUrl; let i = index" class="thumbnail-item"
+                    [class.active]="selectedImageIndex === i">
+                    <img [src]="img" [alt]="product.title + ' - ' + i">
+                </div>
+            </div>
+        </div>
+
+        <div class="product-info">
+            <div class="product-header">
+                <h1 class="product-title">{{ product.title }}</h1>
+            </div>
+
+            <div class="product-price-block">
+                <div class="price-main">
+                    <span class="price-current">{{ product.price | number:'1.2-2' }}</span>
+                    <span class="price-currency">BYN</span>
+                </div>
+                <div class="price-installment">от {{ (product.price / 12) | number:'1.2-2' }} руб/мес</div>
+                <div class="price-bonus">до {{ (product.price * 0.015) | number:'1.2-2' }} на бонусную карту</div>
+            </div>
+
+            <div class="product-actions">
+                <button class="btn-buy-oneclick">КУПИТЬ В 1 КЛИК</button>
+                <button class="btn-add-to-cart">В КОРЗИНУ</button>
+                <button class="btn-favorite">
+                    <img src="assets/favorite-icon.png" alt="favorite">
+                </button>
+            </div>
+
+            <div class="product-delivery">
+                <div class="delivery-date">доставка с 17 июня</div>
+                <div class="delivery-options">
+                    <div class="option-item">
+                        <span>ОПЛАТА ЧАСТЯМИ</span>
+                        <span class="option-price">от {{ (product.price / 12) | number:'1.2-2' }} руб/мес</span>
+                    </div>
+                    <div class="option-item">
+                        <span>НАЛИЧИЕ</span>
+                        <span class="option-store">в магазинах</span>
+                    </div>
+                </div>
+                <div class="delivery-location">
+                    <span>Минск</span>
+                    <button class="change-location">(изменить)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="product-specs">
+        <div class="specs-header">
+            <span class="specs-title">Характеристики</span>
+        </div>
+        <div class="specs-list">
+            <div class="spec-row">
+                <div class="spec-label">Бренд</div>
+                <div class="spec-value">{{ product.brand }}</div>
+            </div>
+            <div class="spec-row">
+                <div class="spec-label">Категория</div>
+                <div class="spec-value">{{ getCategoryName(product.category) }}</div>
+            </div>
+            <div class="spec-row">
+                <div class="spec-label">Гарантия</div>
+                <div class="spec-value">12 месяцев</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="related-products" *ngIf="relatedProducts.length > 0">
+        <div class="related-header">
+            <span class="related-title">С этим товаром покупают</span>
+        </div>
+        <div class="related-grid">
+            <div class="related-card" *ngFor="let item of relatedProducts">
+                <div class="related-image">
+                    <img [src]="item.imageUrl[0]" [alt]="item.title">
+                </div>
+                <div class="related-brand">{{ item.brand }}</div>
+                <div class="related-name">{{ item.title | slice:0:35 }}{{ item.title.length > 35 ? '...' : '' }}</div>
+                <div class="related-price">{{ item.price | number:'1.2-2' }} BYN</div>
+                <button class="related-cart">В корзину</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="skeleton-product" *ngIf="loading">
+        <div class="skeleton-gallery"></div>
+        <div class="skeleton-info">
+            <div class="skeleton-line wide"></div>
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line price"></div>
+        </div>
+    </div>
+</div>

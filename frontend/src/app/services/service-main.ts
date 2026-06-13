@@ -103,6 +103,10 @@ export class ServiceMain {
     return this.http.get<ModelProduct[]>(`${this.baseURL}/tablets?page=${this.currentPage + 1}`);
   }
 
+  public getNewItems(limit: number = 15): Observable<ModelProduct[]> {
+    return this.http.get<ModelProduct[]>(`${this.baseURL}/new?limit=${limit}`);
+  }
+
   resetPage(): void {
     this.currentPage = 1;
     this.hasMore = true;
@@ -117,5 +121,9 @@ export class ServiceMain {
     if (this.currentPage > 1) {
       this.currentPage--;
     }
+  }
+
+  public getProductById(id: number): Observable<ModelProduct> {
+    return this.http.get<ModelProduct>(`${this.baseURL}/products/${id}`);
   }
 }
