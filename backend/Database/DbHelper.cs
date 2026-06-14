@@ -4,7 +4,8 @@ namespace backend.Database;
 
 public class DbHelper
 {
-    private readonly string _connectionString = "Server=localhost;Database=BT;Uid=root;Pwd=;";
+    private readonly string _connectionString =
+        "Server=localhost;Database=BT;Uid=root;Pwd=;";
 
     public MySqlConnection GetConnection()
     {

@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { ModelProduct } from '../models/model-product';
+import { connectConfig } from '../app.config';
 
-export interface CartItem {
+export interface CartItem { 
     id: number;
     userId: number;
     productId: number;
@@ -19,7 +20,7 @@ export interface CartItem {
     providedIn: 'root'
 })
 export class CartService {
-    private apiUrl = 'http://localhost:5195/api/cart';
+    private apiUrl = `${connectConfig.baseApiUrl}/cart`;
     private cartItems: CartItem[] = [];
     private cartSubject = new BehaviorSubject<CartItem[]>([]);
 

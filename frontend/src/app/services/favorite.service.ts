@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { connectConfig } from '../app.config';
 
 export interface FavoriteItem {
     id: number;
@@ -17,7 +18,7 @@ export interface FavoriteItem {
     providedIn: 'root'
 })
 export class FavoriteService {
-    private apiUrl = 'http://localhost:5195/api/favorites';
+    private apiUrl = `${connectConfig.baseApiUrl}/favorites`;
     private favoriteItems: FavoriteItem[] = [];
     private favoriteSubject = new BehaviorSubject<FavoriteItem[]>([]);
 

@@ -10,6 +10,7 @@ import { CartService, CartItem } from '../services/cart.service';
 import { FavoriteService, FavoriteItem } from '../services/favorite.service';
 import { Footer } from '../basic/footer/footer';
 import { Header } from '../basic/header/header';
+import { connectConfig } from '../app.config';
 
 @Component({
   selector: 'app-profile',
@@ -88,7 +89,7 @@ export class Profile implements OnInit {
       }
     });
   }
-
+  
   loadUserData(): void {
     const userId = localStorage.getItem('userId');
     if (!userId) {
@@ -99,9 +100,6 @@ export class Profile implements OnInit {
 
     this.authService.getCurrentUser().subscribe({
       next: (data) => {
-        if (data.avatarUrl && !data.avatarUrl.startsWith('http')) {
-          data.avatarUrl = `http://localhost:5195${data.avatarUrl}`;
-        }
         this.user = data;
         this.loading = false;
       },
@@ -173,10 +171,14 @@ export class Profile implements OnInit {
 
     const userId = localStorage.getItem('userId');
 
-    this.http.post(`http://localhost:5195/api/auth/${userId}/avatar`, formData).subscribe({
-      next: (response: any) => {
-        this.user.avatarUrl = `http://localhost:5195${response.avatarUrl}`;
-        this.showNotification('АВАТАР ОБНОВЛЕН', 'success');
+    this.http.post(`${connectConfig.baseApiUrl}/auth/${userId}/avatar`, formData).subscribe({
+      next: () => {
+        this.authService.getCurrentUser().subscribe({
+          next: (user) => {
+            this.user = user;
+            this.showNotification('АВАТАР ОБНОВЛЕН', 'success');
+          }
+        });
       },
       error: (err) => {
         console.error('Ошибка загрузки аватара:', err);

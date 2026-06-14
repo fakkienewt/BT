@@ -12,3 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient()
   ]
 };
+
+export const  connectConfig = {
+  baseApiUrl: 'http://localhost:5195/api',
+};

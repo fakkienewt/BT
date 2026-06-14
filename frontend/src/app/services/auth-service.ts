@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ModelUser } from '../models/model-user';
+import { connectConfig } from '../app.config';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = 'http://localhost:5195/api/Auth';
+    private apiUrl = `${connectConfig.baseApiUrl}/Auth`;
 
     constructor(private http: HttpClient) { }
 

@@ -9,6 +9,7 @@ import { Footer } from '../basic/footer/footer';
 import { CartService } from '../services/cart.service';
 import { FavoriteService } from '../services/favorite.service';
 import { HttpClient } from '@angular/common/http';
+import { connectConfig } from '../app.config';
 
 @Component({
   selector: 'app-product-page',
@@ -101,7 +102,7 @@ export class ProductPage implements OnInit {
 
     window.scrollTo({ top: 0, behavior: 'instant' });
 
-    this.http.get<ModelProduct>(`http://localhost:5195/api/product/${productId}`).subscribe({
+    this.http.get<ModelProduct>(`${connectConfig.baseApiUrl}/product/${productId}`).subscribe({
       next: (product) => {
         console.log('Найденный товар:', product);
         this.product = product;
